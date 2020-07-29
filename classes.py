@@ -1,4 +1,21 @@
+"""
+Collection of classes:
+ - magic methods implementation
+ - class with slots
+ - abstract class with descendants
+ - factory function producing objects of various classes depending on context
+
+ © Denis Shelemekh, 2020
+
+"""
+
+from typing import List, Union, Tuple
+
+
 class Speedometer:
+    """
+    Sample class demonstrating implementation of some of the "magic" methods.
+    """
     def __init__(self, max_speed, units):
         super().__init__()
         print("__init__")
@@ -26,58 +43,141 @@ class Speedometer:
     def __str__(self):
         return f"Speedometer: max_speed = {self.max_speed}, units = {self.units}"
 
-# s1 = Speedometer(200, "km")
-# print(s1.max_speed)
-# s2 = Speedometer(350, "miles")
-# print(s2 is None)
-# s1()
-# s1(42)
-# print(str(s1))
-# print(repr(s1))
-
-
-# class C:
-#     def __init__(self, value):
-#         self._value = value
-#
-#     @property
-#     def value(self):
-#         print("getter")
-#         return self._value
-#
-#     @value.setter
-#     def value(self, value):
-#         print("setter")
-#         self._value = value
-#
-#     @value.deleter
-#     def value(self):
-#         print("deleter")
-#         del self._value
-#
-#
-# c = C("Hello World!")
-# print(c.value)
-# c.value = "Goodbye World"
-# del c.value
-# print(c.value)
-
 
 class Slotter:
+    """
+    Sample class demonstrating slots property.
+    """
     __slots__ = ['a', 'b']
 
-    def get_values(self):
-        return (self.a, self.b,)
+    def get_values(self) -> Tuple:
+        """
+        Returns object attributes.
+
+        Returns:
+            class attributes as tuple.
+        """
+        return self.a, self.b
 
 
-s = Slotter()
-s.a = 123
-s.b = 'qwe'
+class TableFormatter:
+    """
+    Abstract base class for table formatters.
+    """
 
-print(s.a)
+    def headings(self, headers: Union[List[str], Tuple[str]]) -> None:
+        """
+        Emit the table headings.
+        """
+        raise NotImplementedError()
 
-print(s.b)
+    def row(self, row_data: Union[List[str], Tuple[str]]) -> None:
+        """
+        Emit a single row of table data.
+        """
+        raise NotImplementedError()
 
-s.c = 42
 
-s.get_values()
+class TextTableFormatter(TableFormatter):
+    """
+    Print a table in plain-text format.
+    """
+    def headings(self, headers: Union[List[str], Tuple[str]]) -> None:
+        """
+        Output headers.
+
+        Args:
+             headers: List or tuple of str headers.
+        """
+        for header in headers:
+            print(f"{header:>10s}", end=" ")
+        print()
+        print(("-" * 10 + " ") * len(headers))
+
+    def row(self, row_data: Union[List[str], Tuple[str]]) -> None:
+        """
+        Output row.
+
+        Args:
+             row_data: List or tuple of str fields.
+        """
+        for field in row_data:
+            print(f"{field:>10s}", end=" ")
+        print()
+
+
+class CSVTableFormatter(TableFormatter):
+    """
+    Output portfolio data in CSV format.
+    """
+    def headings(self, headers: Union[List[str], Tuple[str]]) -> None:
+        """
+        Output headers.
+
+        Args:
+             headers: List or tuple of str headers.
+        """
+        print(",".join(headers))
+
+    def row(self, row_data: Union[List[str], Tuple[str]]) -> None:
+        """
+        Output row.
+
+        Args:
+             row_data: List or tuple of str fields.
+        """
+        print(",".join(row_data))
+
+
+class HTMLTableFormatter(TableFormatter):
+    """
+    Output portfolio data in HTML format.
+    """
+    def headings(self, headers: Union[List[str], Tuple[str]]) -> None:
+        """
+        Output headers.
+
+        Args:
+             headers: List or tuple of str headers.
+        """
+        print("<tr>", end="")
+        for header in headers:
+            print(f"<th>{header}</th>", end="")
+        print("</tr>")
+
+    def row(self, row_data: Union[List[str], Tuple[str]]) -> None:
+        """
+        Output row.
+
+        Args:
+             row_data: List or tuple of str fields.
+        """
+        print("<tr>", end="")
+        for field in row_data:
+            print(f"<td>{field}</td>", end="")
+        print("</tr>")
+
+
+def create_formatter(fmt: str) -> TableFormatter:
+    """
+    Factory returning table formatter based on the input format.
+
+    Args:
+         fmt: Str - abbreviation of desired format.
+         One of the following: txt/csv/html.
+    Returns:
+        instance of TableFormatter descendants.
+    Raises:
+        ValueError: If fmt argument is not one of predefined.
+    """
+
+    if fmt == "txt":
+        formatter = TextTableFormatter()
+    elif fmt == "csv":
+        formatter = CSVTableFormatter()
+    elif fmt == "html":
+        formatter = HTMLTableFormatter()
+    else:
+        raise RuntimeError(f"Unknown table format {fmt}")
+
+    return formatter
